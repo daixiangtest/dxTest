@@ -1,0 +1,5 @@
+print('前置脚本')
+a=20
+b=run_fun.random_phone_number()
+print(b)
+case.add_var('phone',b)
