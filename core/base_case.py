@@ -153,6 +153,7 @@ class BaseCase(LogCase):
         for i in self.logs:
             print(i)
         # next(self.script_hook)
+
     def add_var(self, variables,value):
         """
         添加值到环境变量中
