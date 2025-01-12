@@ -1,23 +1,91 @@
+from unittest import TestResult
+
 from core.base_case import BaseCase
+
+
+class TestResult:
+
+    def __init__(self, all, name="调试用例"):
+        self.all = all
+        self.success = 0
+        self.fail = 0
+        self.error = 0
+        self.cases = []
+        self.name = name
+
+    def add_case(self, test,status):
+        data = {
+            'name': getattr(test, 'title', None),
+            'method': getattr(test, 'method', None),
+            'url': getattr(test, 'url', None),
+            'request_headers': getattr(test, 'request_headers', None),
+            'request_data': getattr(test, 'request_body', None),
+            'status_code': getattr(test, 'status_code', None),
+            'response_headers': getattr(test, 'response_headers', None),
+            'response_body': getattr(test, 'response_body', None),
+            'status': status,
+            'time': getattr(test, 'time', None),
+            'log_data': getattr(test, 'logs', None),
+        }
+        self.cases.append(data)
+
+    def add_success(self, test: BaseCase):
+        self.success += 1
+        test.log_info(f"{getattr(test, 'title', None)}:用例执行成功")
+        self.add_case(test,"success")
+
+    def add_fail(self, test: BaseCase,error):
+        self.fail += 1
+        test.log_critical(error)
+        self.add_case(test,"fail")
+
+    def add_error(self, test:BaseCase, error):
+        self.error += 1
+        test.log_error(error)
+        self.add_fail(test,'error')
+    def get_result(self):
+        res={
+            'name':self.name,
+            "all":self.all,
+            'fail':self.fail,
+            'error':self.error,
+            'success':self.success,
+            'cases':self.cases,
+
+        }
+        return res
 
 
 class TestRunner:
     def __init__(self, cases, env_data):
         self.cases = cases
         self.env = env_data
+        self.results = []
 
     def run_cases(self):
         for items in self.cases:
-            print("######env#####",self.env)
             test = BaseCase(self.env)
-            print('执行业务流：',items['name'])
+            result = TestResult(len(items['cases']), items['name'])
+            type=items['type']
             for item in items['cases']:
-                test.run_case(item)
+                try:
+                    test.run_case(item,type)
+                    # print("用例执行通过")
+                    result.add_success(test)
+                except AssertionError as e:
+                    # print("用例执行失败，断言错误", e)
+                    result.add_error(test, e)
+                except Exception as e:
+                    # print("用例执行异常：", e)
+                    result.add_fail(test, e)
+            self.results.append(result.get_result())
+        return self.results
+        # return self.results
 
 
 if __name__ == '__main__':
     cases_task = [
-        {
+        {   'type':"ecv2",
             'name': "测试业务流1",
             'cases': [
                 {
@@ -42,6 +110,7 @@ if __name__ == '__main__':
             ]
         },
         {
+            'type': "接口类型",
             "name": "业务流2",
             'cases': [
                 {
@@ -60,7 +129,7 @@ if __name__ == '__main__':
                         "json": {"username": "admin", "password": "Dx3826729"}
                     },
                     "setup_script": "print('第二条用例开始')",
-                    "teardown_script": "case.add_var('token',response.json()['token'])",
+                    "teardown_script": "case.add_let('token',response.json()['token'])",
                 },
                 {
                     "title": "查看项目列表",
@@ -95,6 +164,14 @@ if __name__ == '__main__':
             "mid": 1230
         },
         "global_fun": open('data/funtion_tools.py', 'r', encoding='utf-8').read(),
+        "global_vars":{
+            "token": "quanjubianliang",
+            "mid": 1230
+        },
+        "local_vars":{
+            "token": "jububianliang",
+            "mid": 1230
+        },
         'db': [
             {
                 'name': 'lockhost',
@@ -118,4 +195,5 @@ if __name__ == '__main__':
             }
         ]
     }
-    TestRunner(cases_task, env).run_cases()
+    requests=TestRunner(cases_task, env).run_cases()
+    print(requests)
