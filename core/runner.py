@@ -94,6 +94,28 @@ if __name__ == '__main__':
             "token": "sjjwiskwo=",
             "mid": 1230
         },
-        "global_fun": open('data/funtion_tools.py', 'r', encoding='utf-8').read()
+        "global_fun": open('data/funtion_tools.py', 'r', encoding='utf-8').read(),
+        'db': [
+            {
+                'name': 'lockhost',
+                'type': 'mysql',
+                'config': {
+                    'host': '127.0.0.1',
+                    'port': 3306,
+                    'user': 'root',
+                    'password': '123456',
+                }
+            },
+            {
+                'name': 'huawei',
+                'type': 'mysql',
+                'config': {
+                    'host': '115.120.244.181',
+                    'port': 3306,
+                    'user': 'root',
+                    'password': 'Dx3826729123',
+                }
+            }
+        ]
     }
     TestRunner(cases_task, env).run_cases()
