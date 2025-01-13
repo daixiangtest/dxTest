@@ -6,6 +6,7 @@ import requests
 from jsonpath import jsonpath
 from core.case_log import LogCase
 from core.data.db_clinet import DBClient
+from core.request_heards import SHA256_headers
 
 
 class BaseCase(LogCase):
@@ -158,6 +159,8 @@ class BaseCase(LogCase):
                 elif BaseCase.is_value(self.env['global_vars'], key):
                     value = self.env['global_vars'][key]
                     print(2222)
+                else:
+                    self.log_warn(f'变量名：{key}不存在环境变量中')
                 # 替换变量
                 print("value",value)
                 data = data.replace(match.group(), str(value))
@@ -183,7 +186,9 @@ class BaseCase(LogCase):
         if type == 'ecv2':
             # 项目常用接口封装
             print("ecv2接口逻辑")
-            responses = requests.request(**request_data)
+            print(self.logs)
+            SHA256_headers(request_data)
+            # responses = requests.request(**request_data)
         else:
             responses = requests.request(**request_data)
         # 保存响应信息
@@ -334,24 +339,61 @@ if __name__ == '__main__':
     case = {
         "title": "测试调试",
         "interface": {
-            "url": "http://115.120.244.181:8001/webhook/${{mid}}/1202/",
-            "method": "GET",
+            "url": "/v3/payment/sys/GRB/90231910/evo.e-commerce.authorise",
+            "method": "POST",
         },
         "headers": {
-            "content-type": "application/json",
-            "Content-MD5": "${{token}}"
+            "content-type": "application/json"
         },
         "params": {},
         "body": {
             "files": {},
             "data": {},
-            "json": {"age": 19, "phone": "${{phone}}"}
+            "json": {
+            "webhook": "http://115.120.244.181:8001/webhook/${{trans_id}}/1/",
+            "captureAfterHours": "0",
+            "authorise": {
+                "merchantTransID": "${{trans_id}}",
+                "merchantTransTime": "${{transTime}}",
+                "storeNum": "S12345678",
+                "transAmount": {
+                    "currency": "THB",
+                    "value": "1"
+                },
+                "metadata": {
+                    "case": 1
+                },
+                "paymentMethod": {
+                    "card": {
+                        "number": "5431289719925031",
+                        "holderName": "MC TEST CARD",
+                        "expiryMonth": "12",
+                        "expiryYear": "2027",
+                        "name": 12121212
+                    }
+                },
+                "threeDS": {
+                    "mpiData": {
+                        "cavv": "YWFiYg==",
+                        "eci": "02",
+                        "dsTransID": "90231910334455",
+                        "threeDSVersion": "2.1.0"
+                    }
+                }
+            },
+            "pspInfo": {
+                "sponsorCode": "90231910",
+                "name": "kbank",
+                "merchantName": "testMerchant",
+                "merchantID": "401012021680001"
+            }
+        }
         },
-        "setup_script": open("data/setup_script", 'r', encoding='utf-8').read(),
-        "teardown_script": open("data/teardown_script", 'r', encoding='utf-8').read(),
+        "setup_script": open("data/G1setup", 'r', encoding='utf-8').read(),
+        "teardown_script": open("data/G1trardown", 'r', encoding='utf-8').read(),
     }
     env = {
-        "base_url": "http://115.120.244.181:8001",
+        "base_url": "https://bkk-staging-api.everonet.com",
         "headers": {
             "content-type": "application/json"
         },

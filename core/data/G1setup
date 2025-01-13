@@ -1,0 +1,5 @@
+print('前置脚本')
+id=run_fun.create_transId()
+case.add_var('trans_id',id)
+time=run_fun.create_transTime()
+case.add_var('transTime',id)
