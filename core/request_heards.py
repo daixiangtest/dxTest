@@ -3,6 +3,8 @@
 """
 
 import time
+from urllib.parse import urlparse
+
 import requests
 import json
 import hashlib
@@ -253,11 +255,51 @@ class TestApi:
 
 def grablink_headers(request_data):
     """G1 grablink 请求头处理"""
-    print(request_data)
-    time.sleep(3000)
 
-def signature_sha256():
-    """签名处理"""
+    singkey = "239hr93f374fg584f934hf"
+    url = request_data["url"]
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    body = request_data["json"]
+    dtime = creare_datetime()
+    authorization=signature_sha256(path,singkey,body)
+    request_data['headers'].update({
+            'Authorization': authorization,
+            'SignType': 'SHA256',
+            'DateTime': dtime,
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+            'Host': 'bkk-staging-api.everonet.com',
+            'Connection': 'keep-alive'
+        })
+    print(request_data)
+    return request_data
+
+
+def creare_datetime():
+    # 获取当前日期时间
+    now = datetime.datetime.now()
+    hours = str(now.hour).zfill(2)
+    minutes = str(now.minute).zfill(2)
+    seconds = str(now.second).zfill(2)
+    day = str(now.day).zfill(2)
+    month_index = str(now.month).zfill(2)
+    year = str(now.year)
+    return year + month_index + day + hours + minutes + seconds + "+0800"
+
+def signature_sha256(url,singkey,body):
+    """
+    签名处理
+    url: 接口请求的路径
+
+
+    """
+    # 定义URL
+    time=creare_datetime()
+    sign_string = 'POST\n' + url + '\n' + time + '\n' + singkey + '\n' + json.dumps(body)
+    # 计算SHA256哈希值
+    authorization = hashlib.sha256(sign_string.encode()).hexdigest()
+    return authorization
 
 if __name__ == '__main__':
     test = TestApi()

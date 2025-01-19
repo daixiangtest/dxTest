@@ -13,7 +13,7 @@ class TestResult:
         self.cases = []
         self.name = name
 
-    def add_case(self, test,status):
+    def add_case(self, test, status):
         data = {
             'name': getattr(test, 'title', None),
             'method': getattr(test, 'method', None),
@@ -32,25 +32,26 @@ class TestResult:
     def add_success(self, test: BaseCase):
         self.success += 1
         test.log_info(f"{getattr(test, 'title', None)}:用例执行成功")
-        self.add_case(test,"success")
+        self.add_case(test, "success")
 
-    def add_fail(self, test: BaseCase,error):
+    def add_fail(self, test: BaseCase, error):
         self.fail += 1
         test.log_critical(error)
-        self.add_case(test,"fail")
+        self.add_case(test, "fail")
 
-    def add_error(self, test:BaseCase, error):
+    def add_error(self, test: BaseCase, error):
         self.error += 1
         test.log_error(error)
-        self.add_fail(test,'error')
+        self.add_fail(test, 'error')
+
     def get_result(self):
-        res={
-            'name':self.name,
-            "all":self.all,
-            'fail':self.fail,
-            'error':self.error,
-            'success':self.success,
-            'cases':self.cases,
+        res = {
+            'name': self.name,
+            "all": self.all,
+            'fail': self.fail,
+            'error': self.error,
+            'success': self.success,
+            'cases': self.cases,
 
         }
         return res
@@ -66,10 +67,10 @@ class TestRunner:
         for items in self.cases:
             test = BaseCase(self.env)
             result = TestResult(len(items['cases']), items['name'])
-            type=items['type']
+            type = items['type']
             for item in items['cases']:
                 try:
-                    test.run_case(item,type)
+                    test.run_case(item, type)
                     # print("用例执行通过")
                     result.add_success(test)
                 except AssertionError as e:
@@ -85,30 +86,30 @@ class TestRunner:
 
 if __name__ == '__main__':
     cases_task = [
-        {   'type':"ecv2",
-            'name': "测试业务流1",
-            'cases': [
-                {
-                    "title": "测试调试",
-                    "interface": {
-                        "url": "http://115.120.244.181:8001/webhook/${{mid}}/1202/",
-                        "method": "GET",
-                    },
-                    "headers": {
-                        "content-type": "application/json",
-                        "Content-MD5": "${{token}}"
-                    },
-                    "params": {},
-                    "body": {
-                        "files": {},
-                        "data": {},
-                        "json": {"age": 20, "phone": "${{phone}}"}
-                    },
-                    "setup_script": open("data/setup_script", 'r', encoding='utf-8').read(),
-                    "teardown_script": open("data/teardown_script", 'r', encoding='utf-8').read(),
-                },
-            ]
-        },
+        {'type': "ecv2",
+         'name': "测试业务流1",
+         'cases': [
+             {
+                 "title": "测试调试",
+                 "interface": {
+                     "url": "http://115.120.244.181:8001/webhook/${{mid}}/1202/",
+                     "method": "GET",
+                 },
+                 "headers": {
+                     "content-type": "application/json",
+                     "Content-MD5": "${{token}}"
+                 },
+                 "params": {},
+                 "body": {
+                     "files": {},
+                     "data": {},
+                     "json": {"age": 20, "phone": "${{phone}}"}
+                 },
+                 "setup_script": open("data/setup_script", 'r', encoding='utf-8').read(),
+                 "teardown_script": open("data/teardown_script", 'r', encoding='utf-8').read(),
+             },
+         ]
+         },
         {
             'type': "接口类型",
             "name": "业务流2",
@@ -150,7 +151,103 @@ if __name__ == '__main__':
                     "setup_script": "print('第三条用例开始')",
                     "teardown_script": "print('第三条用例结束')",
                 }
-            ]}
+            ]},
+        {
+            'type': "ecv2",
+            "name": "G1granlink",
+            'cases': [
+                {
+                    "title": "支付",
+                    "interface": {
+                        "url": "https://bkk-staging-api.everonet.com/v3/payment/sys/GRB/90231910/evo.e-commerce.authorise",
+                        "method": "POST",
+                    },
+                    "headers": {
+                        "content-type": "application/json"
+                    },
+                    "params": {},
+                    "body": {
+                        "files": {},
+                        "data": {},
+                        "json": {
+                            "webhook": "http://115.120.244.181:8001/webhook/${{trans_id}}/1/",
+                            "captureAfterHours": "0",
+                            "authorise": {
+                                "merchantTransID": "${{trans_id}}",
+                                "merchantTransTime": "${{transTime}}",
+                                "storeNum": "S12345678",
+                                "transAmount": {
+                                    "currency": "THB",
+                                    "value": "1"
+                                },
+                                "metadata": {
+                                    "case": 1
+                                },
+                                "paymentMethod": {
+                                    "card": {
+                                        "number": "5431289719925031",
+                                        "holderName": "MC TEST CARD",
+                                        "expiryMonth": "12",
+                                        "expiryYear": "2027",
+                                        "name": 12121212
+                                    }
+                                },
+                                "threeDS": {
+                                    "mpiData": {
+                                        "cavv": "YWFiYg==",
+                                        "eci": "02",
+                                        "dsTransID": "90231910334455",
+                                        "threeDSVersion": "2.1.0"
+                                    }
+                                }
+                            },
+                            "pspInfo": {
+                                "sponsorCode": "90231910",
+                                "name": "kbank",
+                                "merchantName": "testMerchant",
+                                "merchantID": "401012021680001"
+                            }
+                        }
+                    },
+                    "setup_script": open("data/G1setup", 'r', encoding='utf-8').read(),
+                    "teardown_script": open("data/G1trardown", 'r', encoding='utf-8').read(),
+                },
+                {
+                    "title": "撤销",
+                    "interface": {
+                        "url": "https://bkk-staging-api.everonet.com/v3/payment/sys/GRB/90231910/evo.e-commerce.cancel/${{orgtrans_id}}",
+                        "method": "POST",
+                    },
+                    "headers": {
+                        "content-type": "application/json"
+                    },
+                    "params": {},
+                    "body": {
+                        "files": {},
+                        "data": {},
+                        "json": {
+                            "webhook": "https://test-api.stg-grablink.co/v0/payment/webhook/kbank/evo.ec.notification/21042713512500040007",
+                            "cancel": {
+                                "merchantTransID": "${{trans_id}}",
+                                "storeNum": "S12345678",
+                                "merchantTransTime": "${{transTime}}",
+                            }, "metadata": {
+                                "currency": "THB",
+                                "code": "02"
+                            },
+                            "pspInfo": {
+                                "sponsorCode": "90231910",
+                                "name": "kbank",
+                                "merchantName": "testMerchant",
+                                "merchantID": "4010120212740012"
+                            }
+                        }
+                    },
+                    "setup_script": open("data/G1setup", 'r', encoding='utf-8').read(),
+                    "teardown_script": open("data/G1trardown", 'r', encoding='utf-8').read(),
+                }
+            ]
+        }
 
     ]
 
@@ -164,11 +261,11 @@ if __name__ == '__main__':
             "mid": 1230
         },
         "global_fun": open('data/funtion_tools.py', 'r', encoding='utf-8').read(),
-        "global_vars":{
+        "global_vars": {
             "token": "quanjubianliang",
             "mid": 1230
         },
-        "local_vars":{
+        "local_vars": {
             "token": "jububianliang",
             "mid": 1230
         },
@@ -195,5 +292,5 @@ if __name__ == '__main__':
             }
         ]
     }
-    requests=TestRunner(cases_task, env).run_cases()
+    requests = TestRunner(cases_task, env).run_cases()
     print(requests)

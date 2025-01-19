@@ -6,7 +6,7 @@ import requests
 from jsonpath import jsonpath
 from core.case_log import LogCase
 from core.data.db_clinet import DBClient
-from core.request_heards import SHA256_headers
+from core.request_heards import grablink_headers
 
 
 class BaseCase(LogCase):
@@ -155,14 +155,12 @@ class BaseCase(LogCase):
                 # 获取变量(优先获取局部变量)
                 if BaseCase.is_value(self.env['local_vars'], key):
                     value = self.env['local_vars'][key]
-                    print(1111)
                 elif BaseCase.is_value(self.env['global_vars'], key):
                     value = self.env['global_vars'][key]
-                    print(2222)
                 else:
                     self.log_warn(f'变量名：{key}不存在环境变量中')
                 # 替换变量
-                print("value",value)
+
                 data = data.replace(match.group(), str(value))
             return eval(data)
         except Exception as e:
@@ -186,11 +184,10 @@ class BaseCase(LogCase):
         if type == 'ecv2':
             # 项目常用接口封装
             print("ecv2接口逻辑")
-            print(self.logs)
-            SHA256_headers(request_data)
-            # responses = requests.request(**request_data)
-        else:
-            responses = requests.request(**request_data)
+            request_data=grablink_headers(request_data)
+        responses = requests.request(**request_data)
+        print(responses.text)
+        print(self.logs)
         # 保存响应信息
         self.status_code = responses.status_code
         self.response_headers = responses.headers
