@@ -1,0 +1,2 @@
+orgtrans_id=global_var['trans_id']
+case.add_var('orgtrans_id',orgtrans_id)
