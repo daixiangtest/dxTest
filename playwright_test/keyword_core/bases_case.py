@@ -1,12 +1,48 @@
 """
-ui执行步骤基础操作
+ui执行步骤基础操作关键字驱动
 """
 import re
 import time
+import inspect
 from playwright.sync_api import sync_playwright, expect
 
+class KeyWord:
+    """"关键字注册管理"""
+    keywords = {
 
-class BaseBrowser:
+    }
+
+    def get_map_method(self, keyword):
+        """通过关键字获取映射的方法"""
+        return self.keywords.get(keyword)
+
+    @classmethod
+    def register(cls, keyword):
+        def wrapper(func):
+            # 注册关键字 动态设置方法属性
+            setattr(cls, func.__name__, func)
+            # 将注册的方法对象根据关键字保存在映射标准
+            cls.keywords[keyword] = getattr(cls, func.__name__)
+            return func
+        return wrapper
+
+    @classmethod
+    def register_code(cls, keyword, code):
+        """动态注册"""
+        method_maps = {}
+        # 编译代码(检测语法是否是个函数对象)
+        res = compile(code, '<string>', 'exec')
+        # 执行字符中的函数代码讲所有的函数对象信息添加到method_maps字典中
+        exec(res, method_maps)
+        for k, v in method_maps.items():
+            # 遍历判断字典是否是有函数对象
+            if inspect.isfunction(v):
+                # 动态注册方法名何对象
+                setattr(cls, k, v)
+                # 获取对象讲做关键字映射
+                cls.keywords[keyword] = getattr(cls, k)
+
+class BaseBrowser(KeyWord):
     """
     浏览器的创建
     """
@@ -32,6 +68,8 @@ class BaseBrowser:
             raise AttributeError(f"{item}:属性不存在")
     def update_log(self,log):
         self.log=log
+
+    @KeyWord.register("打开浏览器")
     def open_browser(self, browser_type):
         """
         打开浏览器
@@ -47,7 +85,7 @@ class BaseBrowser:
         except  Exception as e:
             self.log.error(f"打开浏览器失败{e}")
 
-
+    @KeyWord.register("打开新页面")
     def open_new_page(self, tag, timeout=3000):
         """
         打开新页面
@@ -63,6 +101,7 @@ class BaseBrowser:
             self.error(f"打开页面失败{e}")
             raise e
 
+    @KeyWord.register("查找页面")
     def find_page(self, tag='', index='', title='', url=''):
         """查找页面"""
         try:
@@ -85,6 +124,7 @@ class BaseBrowser:
             self.error(f"查找页面失败{e}")
             raise e
 
+    @KeyWord.register("切换页面")
     def switch_to_page(self, tag='', index='', title='', url=''):
         """
         切换到指定页面:默认切换到最新的窗口页面
@@ -102,6 +142,7 @@ class BaseBrowser:
             self.error(f"切换页面失败{e}")
             raise e
 
+    @KeyWord.register("关闭页面")
     def close_page(self, tag='', index='', title='', url='') -> None:
         """
         关闭页面:默认关闭最新打开的页面
@@ -124,6 +165,8 @@ class BaseBrowser:
         except  Exception as e:
             self.error(f"关闭页面失败{e}")
             raise e
+
+    @KeyWord.register("强制等待")
     def wait_time(self, timeout):
         """
         等待时间
@@ -137,6 +180,7 @@ class BaseBrowser:
             self.error(f"强制等待失败{e}")
             raise e
 
+    @KeyWord.register("重置浏览器")
     def init_browser(self):
         """
         重置浏览器环境
@@ -151,6 +195,8 @@ class BaseBrowser:
         except  Exception as e:
             self.error(f"初始化浏览器失败{e}")
             raise e
+
+    @KeyWord.register("关闭浏览器")
     def close_browser(self):
         """
         关闭浏览器
@@ -190,6 +236,7 @@ class PageMixin(BaseBrowser):
     页面操作
     """
 
+    @KeyWord.register("刷新页面")
     def refresh(self):
         """
         刷新页面
@@ -201,6 +248,7 @@ class PageMixin(BaseBrowser):
             self.logger.error(f"刷新页面失败{e}")
             raise e
 
+    @KeyWord.register("页面返回")
     def go_back(self):
         """
         返回上一页
@@ -212,7 +260,7 @@ class PageMixin(BaseBrowser):
             print("返回上一页失败", e)
             raise e
 
-
+    @KeyWord.register("页面前进")
     def go_forward(self):
         """前进到下一页"""
         try:
@@ -222,6 +270,7 @@ class PageMixin(BaseBrowser):
             print("前进到下一页失败", e)
             raise e
 
+    @KeyWord.register("保存截图")
     def save_page_img(self, name, type1, path=None):
         """
         保存页面截图
@@ -240,6 +289,8 @@ class PageMixin(BaseBrowser):
         except Exception as e:
             self.log.error(f"保存页面截图失败{e}")
             return ""
+
+    @KeyWord.register("滚动指定位置")
     def scroll_to_height(self, height):
         """
         滚动到指定位置
@@ -252,6 +303,7 @@ class PageMixin(BaseBrowser):
             print("滚动到指定位置失败", e)
             raise e
 
+    @KeyWord.register("执行JS")
     def execute_script(self, script, *args):
         """执行JavaScript脚本"""
         try:
@@ -266,6 +318,7 @@ class LocatorMixin(BaseBrowser):
     """
     元素定位操作
     """
+    @KeyWord.register("打开网页")
 
     def open_url(self, url, wait_until="load", timeout=30000):
         """
@@ -284,6 +337,7 @@ class LocatorMixin(BaseBrowser):
             self.error(f"打开网页失败{e}")
             raise e
 
+    @KeyWord.register("输入")
     def fill_value(self, locator, value, timeout=30000):
         """
         输入文本
@@ -299,10 +353,11 @@ class LocatorMixin(BaseBrowser):
             self.error(f"输入文本失败{e}")
             raise e
 
+    @KeyWord.register("点击")
     def click_elm(self, locator, timeout=30000):
         """
         点击元素
-        :param timeout: 等待时间毫秒
+        :param timeout: 等待时间毫秒init_browser
         :param locator: 元素
         :return:
         """
@@ -314,6 +369,7 @@ class LocatorMixin(BaseBrowser):
             print("点击元素失败", e)
             raise e
 
+    @KeyWord.register("悬浮")
     def hover(self, locator, timeout=3000):
         """悬停到元素上方"""
         try:
@@ -324,6 +380,7 @@ class LocatorMixin(BaseBrowser):
             self.error(f"悬停到元素失败{e}")
             raise e
 
+    @KeyWord.register("聚焦元素")
     def focus_element(self, locator, timeout=3000):
         """
         聚焦元素
@@ -339,6 +396,7 @@ class LocatorMixin(BaseBrowser):
             self.error(f"聚焦元素失败{e}")
             raise e
 
+    @KeyWord.register("选择下拉框")
     def select_option(self, locator, value, timeout=3000):
         """
         选择下拉框的选项
@@ -355,6 +413,7 @@ class LocatorMixin(BaseBrowser):
             self.error(f"选择下拉框失败{e}")
             raise e
 
+    @KeyWord.register("拖拽")
     def drag_and_drop(self, start_selector, end_selector, timeout=3000):
         """
         拖拽元素
@@ -374,6 +433,8 @@ class MouseMixin(BaseBrowser):
     """
     鼠标键盘类操作
     """
+
+    @KeyWord.register("鼠标点击")
     def mouse_click(self, x, y, button='left', count=1):
         """
         模拟鼠标点击
@@ -390,6 +451,7 @@ class MouseMixin(BaseBrowser):
             print("模拟鼠标点击失败", e)
             raise e
 
+    @KeyWord.register("鼠标移动")
     def move_mouse(self, x, y):
         """模拟鼠标移动"""
         try:
@@ -399,6 +461,7 @@ class MouseMixin(BaseBrowser):
             print("模拟鼠标移动失败", e)
             raise e
 
+    @KeyWord.register("鼠标按下")
     def mouse_down(self, button='left'):
         """模拟鼠标按下"""
         try:
@@ -408,6 +471,7 @@ class MouseMixin(BaseBrowser):
             print("模拟鼠标按下失败", e)
             raise e
 
+    @KeyWord.register("鼠标抬起")
     def mouse_up(self, button='left'):
         """模拟鼠标抬起"""
         try:
@@ -417,6 +481,7 @@ class MouseMixin(BaseBrowser):
             print("模拟鼠标抬起失败", e)
             raise e
 
+    @KeyWord.register("键盘按键")
     def press_key(self, value):
         """模拟键盘按键"""
         try:
@@ -425,6 +490,7 @@ class MouseMixin(BaseBrowser):
             print("键盘按键操作失败", e)
             raise e
 
+    @KeyWord.register("键盘输入")
     def press_type(self, keys):
         """模拟键盘输入文本"""
         try:
@@ -438,6 +504,7 @@ class MouseMixin(BaseBrowser):
 class WaitMixin(BaseBrowser):
     """等待相关的操作"""
 
+    @KeyWord.register("默认等待时间")
     def set_default_timeout(self, timeout=30000):
         """
         设置page全局默认的等待时间
@@ -451,6 +518,7 @@ class WaitMixin(BaseBrowser):
             print("设置默认等待时间失败", e)
             raise e
 
+    @KeyWord.register("强制等待时间")
     def wait_for_time(self, timeout=3000):
         """设置强制等待时间"""
         try:
@@ -460,6 +528,7 @@ class WaitMixin(BaseBrowser):
             print("设置强制等待时间失败", e)
             raise e
 
+    @KeyWord.register("等待页面加载完成")
     def wait_for_load(self):
         """等待页面加载完成"""
         try:
@@ -469,6 +538,7 @@ class WaitMixin(BaseBrowser):
             print("等待页面加载完成失败", e)
             raise e
 
+    @KeyWord.register("等待网络请求完成")
     def wait_for_network(self):
         """等待网络请求完成"""
         try:
@@ -478,6 +548,7 @@ class WaitMixin(BaseBrowser):
             print("等待网络请求完成失败", e)
             raise e
 
+    @KeyWord.register("等待元素可见")
     def wait_for_element(self, locator, timeout=3000):
         """
         等待元素可见
@@ -495,6 +566,7 @@ class WaitMixin(BaseBrowser):
 class IFrameMixin(BaseBrowser):
     """iframe相关的操作"""
 
+    @KeyWord.register("iframe输入")
     def frame_fill_value(self, frame, locator, value, timeout=3000):
         """
         :param frame: iframe定位表达式
@@ -506,6 +578,7 @@ class IFrameMixin(BaseBrowser):
         print(f"正在元素:{locator}，输入值:{value}")
         self.page.frame_locator(frame).locator(locator).fill(value, timeout=timeout)
 
+    @KeyWord.register("iframe点击")
     def frame_click_element(self, frame, locator, button='left', count=1, timeout=3000):
         """
         点击iframe内元素
@@ -519,6 +592,7 @@ class IFrameMixin(BaseBrowser):
         print(f"正在点击元素:{locator}")
         self.page.frame_locator(frame).locator(locator).click(button=button, count=count, timeout=timeout)
 
+    @KeyWord.register("iframe元素悬浮")
     def frame_hover(self, frame, locator, timeout=3000):
         """
         悬停到元素上方
@@ -530,6 +604,7 @@ class IFrameMixin(BaseBrowser):
         print(f"正在悬停到元素:{locator}")
         self.page.frame_locator(frame).locator(locator).hover(timeout=timeout)
 
+    @KeyWord.register("iframe元素聚焦")
     def frame_focus_element(self, frame, locator, timeout=3000):
         """
         聚焦元素
@@ -542,6 +617,7 @@ class IFrameMixin(BaseBrowser):
         self.page.frame_locator(frame)
         locator(locator).focus(timeout=timeout)
 
+    @KeyWord.register("iframe选择下拉框")
     def frame_select_option(self, frame, locator, value, timeout=3000):
         """
         选择下拉框的选项
@@ -554,6 +630,7 @@ class IFrameMixin(BaseBrowser):
         print(f"正在选择下拉框:{locator}，选项的值:{value}")
         self.page.frame_locator(frame).locator(locator).select_option(value, timeout=timeout)
 
+    @KeyWord.register("iframe模拟键盘输入")
     def frame_type_value(self, frame, locator, value, timeout=3000):
         """
         模拟键盘输入
@@ -566,6 +643,8 @@ class IFrameMixin(BaseBrowser):
         print(f"正在输入元素:{locator}，输入的值:{value}")
         self.page.frame_locator(frame).locator(locator).type(value, timeout=timeout)
 
+
+    @KeyWord.register("iframe长按元素")
     def frame_long_click_element(self, frame, locator, delay=0.1):
         """
         长按元素
@@ -577,6 +656,7 @@ class IFrameMixin(BaseBrowser):
         print(f"正在长按元素：{locator},按住时间：{delay}")
         self.page.frame_locator(frame).click(locator, delay=delay)
 
+    @KeyWord.register("iframe拖拽元素")
     def frame_drag_and_drop(self, frame, start_selector, end_selector, timeout=3000):
         """
         拖拽元素
@@ -595,6 +675,7 @@ class AssertMixin(BaseBrowser):
     """
     断言操作
     """
+    @KeyWord.register("断言页面的标题")
     def assert_page_title(self, expect_results, is_equal=1):
         """
         断言页面的标题
@@ -607,6 +688,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page).not_to_have_title(re.compile(expect_results))
 
+    @KeyWord.register("断言页面的url地址")
     def assert_page_url(self, expect_results, is_equal=1):
         """
         断言页面的url地址
@@ -619,6 +701,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page).not_to_have_url(re.compile(expect_results))
 
+    @KeyWord.register("断言元素的value")
     def except_elm_value(self, locator, expect_results, is_equal=1):
         """
         断言元素的value
@@ -633,6 +716,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator)).not_to_have_value(re.compile(expect_results))
 
+    @KeyWord.register("断言元素文本")
     def except_elm_text(self, locator, expect_results, is_equal):
         """
         断言元素的文本
@@ -646,6 +730,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator)).not_to_have_text(expect_results)
 
+    @KeyWord.register("断言元素的属性值")
     def except_elm_attribute(self, locator, name, value, is_equal):
         """
         断言元素的属性值
@@ -660,6 +745,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator)).not_to_have_attribute(name, value)
 
+    @KeyWord.register("断言元素是否可见")
     def except_elm_visible(self, locator, index=1):
         """
         断言元素是否可见
@@ -672,6 +758,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_visible()
 
+    @KeyWord.register("断言元素是否不可见")
     def except_elm_hidden(self, locator, index=1):
         """
         断言元素是否不可见
@@ -684,6 +771,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_hidden()
 
+    @KeyWord.register("断言元素是否可用")
     def except_elm_enabled(self, locator, index=1):
         """
         断言元素是否可用
@@ -696,6 +784,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_enabled()
 
+    @KeyWord.register("断言元素是否不可用")
     def except_elm_disabled(self, locator, index=1):
         """
         断言元素是否不可用
@@ -708,6 +797,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_disabled()
 
+    @KeyWord.register("断言元素是否被选中")
     def except_elm_checked(self, locator, index=1):
         """
         断言元素是否被选中
@@ -720,6 +810,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_checked()
 
+    @KeyWord.register("断言元素是否为空")
     def except_elm_empty(self, locator, index=1):
         """
         断言元素是否为空
@@ -732,6 +823,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_empty()
 
+    @KeyWord.register("断言元素是否可编辑")
     def except_elm_editable(self, locator, index=1):
         """
         断言元素是否可编辑
@@ -744,6 +836,7 @@ class AssertMixin(BaseBrowser):
         else:
             expect(self.page.locator(locator).first).to_be_editable()
 
+    @KeyWord.register("断言元素是否获取焦点")
     def except_elm_focused(self, locator, index=1):
         """
         断言元素是否获取焦点
@@ -764,16 +857,19 @@ class BaseCase(PageMixin, LocatorMixin, MouseMixin, AssertMixin,WaitMixin,IFrame
         :return:
         """
         try:
-            method=setup.get("method")
-            self.log.debug(f"执行步骤：{setup.get('desc')} 执行方法：{method},执行参数：{setup.get('params')}")
-            if hasattr(self, method):
-                args=self.replace_value(setup.get("params"))
-                getattr(self, method)(**args)
+            keyword=setup.get("keyword")
+            print("+++++++++++")
+            print(keyword)
+            self.log.debug(f"执行步骤：{setup.get('desc')} 执行关键字：{keyword},执行参数：{setup.get('params')}")
+            fun=self.get_map_method(keyword)
+            if fun is None:
+                self.log.error(f"执行步骤：{setup.get('desc')} 执行关键字：{keyword}不存在")
+                raise AttributeError(f"执行关键字:{keyword}方法不存在")
             else:
-                self.log.error(f"执行步骤：{setup.get('desc')} 执行方法：{method}不存在")
-                raise AttributeError(f"{method}方法不存在")
+                args = self.replace_value(setup.get("params"))
+                fun(self,**args)
         except  Exception as e:
-            self.log.error(f"执行用例异常，执行参数：{setup}")
+            self.log.error(f"执行用例异常，执行参数：{setup}",e)
             raise e
 
     def replace_value(self, value:dict):

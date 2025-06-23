@@ -1,7 +1,7 @@
 import time
 
-from playwright_test.core.bases_case import BaseCase
-from playwright_test.core.logger import Logger
+from playwright_test.keyword_core.bases_case import BaseCase
+from playwright_test.keyword_core.logger import Logger
 
 
 class Result:
@@ -118,6 +118,9 @@ class Result:
         }
 
 class Runner:
+    """
+    关键字驱动测试执行用例
+    """
     def __init__(self, env_config, test_case):
         self.env_config = env_config
         self.test_case = test_case
@@ -154,7 +157,7 @@ class Runner:
                 self.browser, self.context, self.page = run_case.browser, run_case.context, run_case.page
             except  Exception as e:
                 self.log.error("前置步骤执行失败", e)
-                return
+                raise e
 
     def run_suite(self):
         """
@@ -209,8 +212,8 @@ if __name__ == '__main__':
         "name": "测试名称",
         # 前置操作
         "setup_step": [
-            {"desc": "打开浏览器", "method": "open_browser", "params": {"browser_type": "chromium"}},
-            {"desc": "打开网页", "method": "open_url", "params": {"url": ".com"}}
+            {"desc": "打开浏览器", "keyword": "打开浏览器", "params": {"browser_type": "chromium"}},
+            {"desc": "打开网页", "keyword": "打开网页", "params": {"url": ".com"}}
         ],
         # 用例集
         "cases": [
@@ -219,11 +222,10 @@ if __name__ == '__main__':
                 "title": "测试用例1",
                 "skip": False,
                 "steps": [
-                    # {"desc": "打开浏览器", "method": "open_browser", "params": {"browser_type": "chromium"}},
-                    # {"desc": "打开网页", "method": "open_url", "params": {"url": ".com"}},
-                    {"desc": "输入搜索内容", "method": "fill_value",
+
+                    {"desc": "输入搜索内容", "keyword": "输入",
                      "params": {"locator": '//*[@id="kw"]', "value": "{{value1}}"}},
-                    {"desc": "点击搜索", "method": "click_elm", "params": {"locator": '//*[@id="su"]'}},
+                    {"desc": "点击搜索", "keyword": "点击", "params": {"locator": '//*[@id="su"]'}},
                     # {"desc": "等待时间", "method": "wait_time", "params": {"timeout": 3}},
 
                 ]},
@@ -232,14 +234,14 @@ if __name__ == '__main__':
                 "title": "测试用例2",
                 "skip": False,
                 "steps": [
-                    {"desc": "重置浏览器", "method": "init_browser", "params": {}},
+                    {"desc": "重置浏览器", "keyword": "重置浏览器", "params": {}},
                     # {"desc": "等待时间", "method": "wait_time", "params": {"timeout": 3}},
                     # {"desc": "打开浏览器", "method": "open_browser", "params": {"browser_type": "chromium"}},
-                    {"desc": "打开网页", "method": "open_url", "params": {"url": "https://www.baidu.com"}},
-                    {"desc": "输入搜索内容", "method": "fill_value",
+                    {"desc": "打开网页", "keyword": "打开网页", "params": {"url": "https://www.baidu.com"}},
+                    {"desc": "输入搜索内容", "keyword": "fill_value",
                      "params": {"locator": '//*[@id="kw"]', "value": "{{value2}}"}},
-                    {"desc": "点击搜索", "method": "click_elm", "params": {"locator": '//*[@id="su"]'}},
-                    {"desc": "等待时间", "method": "wait_time", "params": {"timeout": 3}},
+                    {"desc": "点击搜索", "keyword": "点击", "params": {"locator": '//*[@id="su"]'}},
+                    {"desc": "等待时间", "keyword": "强制等待", "params": {"timeout": 3}},
                     # {"desc": "关闭浏览器", "method": "close_browser", "params": {}}
                 ]}
         ]
